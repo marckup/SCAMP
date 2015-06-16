@@ -164,5 +164,39 @@ namespace ScampApi.Controllers
             return new ObjectResult(rtnView) { StatusCode = 200 };
 
         }
+
+        [HttpDelete("{userId")]
+        public async Task<IActionResult> Delete( string groupId, string userId )
+        {
+            // Validate that the group and user we were provided exist
+
+            // Who is requesting this operation
+            var currentUser = await _securityHelper.GetCurrentUser();
+
+            // Can manage this group?
+            if(!currentUser.IsSystemAdmin)
+            {
+                // see if current user is an admin of the group be changed
+                var isGroupAdmin = currentUser.GroupMembership.FirstOrDefault( g => g.isAdmin == true && g.Id == groupId );
+                if ( isGroupAdmin == null )
+                    return new HttpStatusCodeResult( 204 );
+            }
+
+            // Get information about this user
+            var tmpUser = await _userRepository.GetUserbyId( userId );
+            if ( tmpUser == null ) // group not found, return appropriately
+                return HttpNotFound();
+
+            ScampUserGroupMbrship tmpGroup = tmpUser.GroupMembership.FirstOrDefault( g => g.Id == groupId );
+            if ( tmpGroup == null ) // user not found in group, return appropriately
+                return new HttpStatusCodeResult( 204 ); // nothing found
+
+            //TODO: add in group admin/manager authorization check
+            //if (!await CurrentUserCanViewGroup(group))
+            //    return new HttpStatusCodeResult(403); // Forbidden
+            //}
+
+            return new HttpStatusCodeResult( 200 );
+        }
     }
 }
